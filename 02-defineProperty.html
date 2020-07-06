@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="app">
+
+    </div>
+    <script>
+        function defineReactive(obj,key,val){
+            Object.defineProperty(obj,key,{
+                get(){
+                    console.log('get',val);
+                    return val;
+                },
+                set(newVal){ //在这里通知更新页面
+                    if(newVal!=val){
+                        console.log('set',newVal);
+                        val = newVal;
+                        //执行更新，真正做DOM操作
+                        update();
+                    }
+                }
+            })
+        }
+
+        //vue不希望update()函数每次要自己去写，所以才有编译器的诞生
+        //什么是编译器？根据模板语法自动生成更新函数，而不需要手写
+        function update(){
+            app.innerHTML=obj.foo;
+        }
+
+
+        const obj={}
+
+        defineReactive(obj,'foo','foo')
+
+        setInterval(()=>{
+            obj.foo = new Date().toLocaleTimeString();
+        },1000)
+    </script>
+</body>
+</html>
