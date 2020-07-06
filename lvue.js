@@ -31,6 +31,8 @@ function defineReactive(obj,key,val){
                 observe(newVal)
                 val = newVal
                 
+                //通知更新
+                watchers.forEach(w=>w.update())
             }
         }
     })
@@ -140,7 +142,8 @@ class Compile{
     //插值文本的编译
     compileText(node){
         //获取匹配表达式
-        node.textContent = this.$vm[RegExp.$1]
+        // node.textContent = this.$vm[RegExp.$1]
+        this.update(node,RegExp.$1,'text')
     }
 
     //编译节点
@@ -162,12 +165,36 @@ class Compile{
 
     //文本指令 //l-text
     text(node,exp){
-        node.textContent = this.$vm[exp]
+        // node.textContent = this.$vm[exp]
+        this.update(node,exp,'text')
     }
 
      //html指令 //l-html
     html(node,exp){
-        node.innerHTML = this.$vm[exp]
+        // node.innerHTML = this.$vm[exp]
+        this.update(node,exp,'html')
+    }
+
+    //公用函数，让更新去用
+    //所有动态的绑定都需要创建更新函数以及对应的watcher实例
+    update(node,exp,dir){
+        //textUpdater(),htmlUpdater()
+        //初始化
+        const fn = this[dir+'Updater'];
+        fn&&fn(node,this.$vm[exp])
+
+        //更新，值是Watcher里传的
+        new Watcher(this.$vm, exp, function(val){
+            fn&&fn(node,val)
+        })
+    }
+
+    htmlUpdater(node,value){
+        node.innerHTML = value
+    }
+
+    textUpdater(node,value){
+        node.textContent = value
     }
 
     //元素
@@ -178,5 +205,25 @@ class Compile{
     //判断是否是插值表达式{{xx}}}
     isinter(node){
         return node.nodeType===3 && /\{\{(.*)\}\}/.test(node.textContent)
+    }
+}
+
+
+//Watcher:小秘书，界面中的一个依赖对应一个小秘书
+const watchers = []
+
+class Watcher{
+    constructor(vm,key,updateFn){
+        this.vm = vm;
+        this.key = key;
+        this.updateFn = updateFn;
+
+        watchers.push(this)//实例放到watcers里面
+    }
+
+    //管家调用
+    update(){
+        //传入当前的最新值给更新函数
+        this.updateFn.call(this.vm,this.vm[this.key])
     }
 }
