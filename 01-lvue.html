@@ -10,9 +10,10 @@
         <p>{{counter}}</p>
     </div>
 
-    <script src="node_modules/vue/dist/vue.js"></script>
+    <!-- <script src="node_modules/vue/dist/vue.js"></script> -->
+    <script src="lvue.js"></script>
     <script>
-        const app = new Vue({
+        const app = new LVue({
             el: '#app',
             data:{
                 counter:1
@@ -20,7 +21,8 @@
         })
 
         setInterval(()=>{
-            app.counter++;
+            // app.$data.counter++;
+            app.counter++
         },1000);
     </script>
 </body>
