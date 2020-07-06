@@ -28,7 +28,7 @@ function defineReactive(obj,key,val){
 
 
 //对象响应式处理
-
+//拦截 
 function observe(obj){
     //判断obj类型必须是对象
     if(typeof obj != 'object' || obj==null){
