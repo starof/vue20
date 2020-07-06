@@ -79,6 +79,9 @@ class LVue{
         console.log("执行了proxy1")
         //代理
         proxyFun(this)
+
+        //编译器
+        new Compile("#app",this)
     }
 }
 
@@ -100,6 +103,80 @@ function walk(obj){
     })
 }
 
-function proxy(){
+//编译过程
 
+//new Compile(el,vm)
+class Compile{
+    constructor(el,vm){
+        this.$vm=vm;
+        this.$el = document.querySelector(el)
+
+        //编译模板
+        if(this.$el){
+            this.compile(this.$el);
+        }
+    }
+
+    compile(el){
+        //递归遍历el
+        
+        el.childNodes.forEach(node=>{
+            //判断其类型
+            if(this.isElement(node)){
+                console.log('编译元素',node.nodeName)
+                this.compileElement(node)
+            }else if(this.isinter(node)){
+                console.log('编译插值表达式',node.textContent)
+                this.compileText(node)
+            }
+
+            if(node.childNodes){
+                this.compile(node)
+            }
+        })
+    }
+    
+
+    //插值文本的编译
+    compileText(node){
+        //获取匹配表达式
+        node.textContent = this.$vm[RegExp.$1]
+    }
+
+    //编译节点
+    compileElement(node){
+        const nodeAttrs = node.attributes
+        Array.from(nodeAttrs).forEach(attr=>{
+            //l-xxx = "exp"
+            const attrName = attr.name //l-xxx
+            const exp = attr.value //aaa
+            //判断这个属性类型
+            // if(this.isDirective(attrName)){
+            if (attrName.indexOf('l-') === 0) {
+                const dir = attrName.substring(2)
+                //执行指令
+                this[dir] && this[dir](node,exp)
+            }
+        })
+    }
+
+    //文本指令 //l-text
+    text(node,exp){
+        node.textContent = this.$vm[exp]
+    }
+
+     //html指令 //l-html
+    html(node,exp){
+        node.innerHTML = this.$vm[exp]
+    }
+
+    //元素
+    isElement(node){
+        return node.nodeType === 1
+    }
+
+    //判断是否是插值表达式{{xx}}}
+    isinter(node){
+        return node.nodeType===3 && /\{\{(.*)\}\}/.test(node.textContent)
+    }
 }
