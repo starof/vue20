@@ -19,9 +19,15 @@ Dep:管理多个Watcher，批量更新
 function defineReactive(obj,key,val){
     //val可能是对象，就需要递归处理
     observe(val)
+
+    //依赖收集的时候，每执行一次defineReactive就会创建一个Dep实例
+    const dep = new Dep()
+
     Object.defineProperty(obj,key,{
         get(){
             console.log('get',val);
+            //依赖收集
+            Dep.target && dep.addDep(Dep.target)
             return val;
         },
         set(newVal){ //在这里通知更新页面
@@ -32,7 +38,8 @@ function defineReactive(obj,key,val){
                 val = newVal
                 
                 //通知更新
-                watchers.forEach(w=>w.update())
+                // watchers.forEach(w=>w.update()) //简单粗暴
+                dep.notify()
             }
         }
     })
@@ -210,7 +217,7 @@ class Compile{
 
 
 //Watcher:小秘书，界面中的一个依赖对应一个小秘书
-const watchers = []
+// const watchers = []
 
 class Watcher{
     constructor(vm,key,updateFn){
@@ -218,12 +225,36 @@ class Watcher{
         this.key = key;
         this.updateFn = updateFn;
 
-        watchers.push(this)//实例放到watcers里面
+        // watchers.push(this)//实例放到watcers里面
+        //读一次数据，触发defineReactive里面的get()
+        Dep.target = this
+        this.vm[this.key]
+        Dep.target = null
     }
 
-    //管家调用
+    //管家调用 //未来会被dep调用
     update(){
         //传入当前的最新值给更新函数
         this.updateFn.call(this.vm,this.vm[this.key])
     }
+}
+
+class Dep{
+
+    constructor(){
+        this.deps = []
+
+    }
+
+    //依赖收集到dep
+    addDep(watcher){
+        this.deps.push(watcher)
+    }
+
+    //set的时候通知更新
+    notify(){
+        this.deps.forEach(dep=>dep.update())
+    }
+
+
 }
